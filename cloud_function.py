@@ -38,6 +38,6 @@ def main(event, context):
         logging.info(pipeline.labels)
         
         delta = datetime.now() - datetime.strptime(timestamp[:-11].replace('T',' '), '%Y-%m-%d %H:%M:%S')
-        if delta.total_seconds() > pipeline.labels['sla']:
+        if delta.total_seconds() > int(pipeline.labels['wanna_sla']):
             request = aiplatform_v1.CancelPipelineJobRequest(name=name)
             client.cancel_pipeline_job(request=request)
