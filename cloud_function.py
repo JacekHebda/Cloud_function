@@ -10,7 +10,6 @@ def entry_point(event, context):
          context (google.cloud.functions.Context): Metadata for the event.
     """
     SLA_SECONDS = 10
-    event
     print(event)
     print('Event ID: {}'.format(context.event_id))
     print('Event type: {}'.format(context.event_type))
