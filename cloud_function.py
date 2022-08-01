@@ -4,15 +4,14 @@ import logging
 
 from google.cloud import aiplatform_v1
 
-
-def entry_point(event, context):
+def main(event, context):
     """Triggered by a change to a Cloud Storage bucket.
     Args:
          event (dict): Event payload.
          context (google.cloud.functions.Context): Metadata for the event.
     """
-    SLA_SECONDS = 10
     logging.info(event)
+    logging.info(context)
     logging.info('Event ID: {}'.format(context.event_id))
     logging.info('Event type: {}'.format(context.event_type))
     logging.info('Bucket: {}'.format(event['bucket']))
