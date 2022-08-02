@@ -1,31 +1,21 @@
-import datetime
 import json
-import logging
-
-from google.cloud import aiplatform_v1
+from datetime import datetime as dt
+from google.cloud import aiplatform_v1, storage
 
 def main(event, context):
-    """Triggered by a change to a Cloud Storage bucket.
-    Args:
-         event (dict): Event payload.
-         context (google.cloud.functions.Context): Metadata for the event.
-    """
-    logging.info(event)
-    logging.info(context)
-    logging.info('Event ID: {}'.format(context.event_id))
-    logging.info('Event type: {}'.format(context.event_type))
-    logging.info('Bucket: {}'.format(event['bucket']))
-    logging.info('File: {}'.format(event['name']))
-    logging.info('Metageneration: {}'.format(event['metageneration']))
-    logging.info('Created: {}'.format(event['timeCreated']))
-    logging.info('Updated: {}'.format(event['updated']))
 
-    file = json.load(event['mediaLink'])
+    path = event["id"].rsplit("/",1)[0].split("/",1)[1]
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(event['bucket'])
+    blob = bucket.blob(path)
+    data = blob.download_as_text().splitlines()
+
     client = aiplatform_v1.PipelineServiceClient(        
         client_options={"api_endpoint":"europe-west1-aiplatform.googleapis.com"},
     )
 
-    for entry in file:
+    for line in data:
+        entry = json.loads(line)
         timestamp = entry['jsonPayload']['startTime']
         project_id = entry['logName'].split('/')[1]
         location = entry['resource']['labels']['location']
@@ -35,9 +25,9 @@ def main(event, context):
         request = aiplatform_v1.GetPipelineJobRequest(name=name)
         pipeline = client.get_pipeline_job(request=request)
 
-        logging.info(pipeline.labels)
+        print(pipeline.labels)
         
-        delta = datetime.now() - datetime.strptime(timestamp[:-11].replace('T',' '), '%Y-%m-%d %H:%M:%S')
-        if delta.total_seconds() > int(pipeline.labels['wanna_sla']):
+        delta = dt.now() - dt.strptime(timestamp[:-8].replace('T',' '), '%Y-%m-%d %H:%M:%S')
+        if delta.total_seconds() > pipeline.labels['wanna_sla']:
             request = aiplatform_v1.CancelPipelineJobRequest(name=name)
             client.cancel_pipeline_job(request=request)
